@@ -1,0 +1,38 @@
+# Editor / IDE
+.vscode/
+.idea/
+*.iml
+.fleet/
+.zed/
+*.code-workspace
+
+# Vim / Emacs
+*.swp
+*.swo
+.*.sw[a-p]
+*~
+\#*\#
+.\#*
+
+# OS
+.DS_Store
+.AppleDouble
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Ignore build artifacts and lock files
+**/target/
+
+
+/Cargo.lock
+
+# Internal design docs (not for public repo)
+/docs/
+
+# Claude session file
+/SESSION.md
+
+# Claude Code — personal use only, not shared with contributors
+/CLAUDE.md
+/.claude/
