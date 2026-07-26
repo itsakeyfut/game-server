@@ -1,0 +1,9 @@
+[package]
+name = "gsf-cache-protocol"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+gsf-codec = { path = "../../foundation/codec" }
+gsf-cache-store = { path = "../store" }

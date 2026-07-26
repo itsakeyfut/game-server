@@ -1,0 +1,9 @@
+[package]
+name = "gsf-room"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+gsf-actor-runtime = { path = "../../foundation/actor-runtime" }
+gsf-app = { path = "../app" }

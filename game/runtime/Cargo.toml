@@ -1,0 +1,10 @@
+[package]
+name = "gsf-runtime"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+gsf-app = { path = "../app" }
+gsf-room = { path = "../room" }
+gsf-services = { path = "../services" }
