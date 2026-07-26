@@ -11,6 +11,7 @@ members = [
     "foundation/security",
     "foundation/observability",
     "foundation/net-sim",
+    "foundation/lifecycle",
     # game/ — Game Server Framework
     "game/app",
     "game/room",
