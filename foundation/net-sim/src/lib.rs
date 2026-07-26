@@ -24,10 +24,12 @@
 //! ```
 #![forbid(unsafe_code)]
 
+mod clock;
 mod link;
 mod rng;
 mod time;
 
+pub use clock::{SimClock, TimerId};
 pub use link::{Bandwidth, LinkConfig, Probability, VirtualLink};
 pub use rng::SimRng;
 pub use time::SimInstant;
