@@ -10,6 +10,7 @@ members = [
     "foundation/actor-runtime",
     "foundation/security",
     "foundation/observability",
+    "foundation/net-sim",
     # game/ — Game Server Framework
     "game/app",
     "game/room",
