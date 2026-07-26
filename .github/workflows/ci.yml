@@ -55,15 +55,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # Single source of truth: read the MSRV from the workspace `rust-version`.
+      # Single source of truth: read + validate the MSRV from the workspace
+      # `rust-version`. The anchored pattern only ever yields a bare version number
+      # (no shell metacharacters), so untrusted PR content cannot inject here.
       - name: Read MSRV from Cargo.toml
         id: msrv
-        run: echo "version=$(grep -m1 '^rust-version' Cargo.toml | sed -E 's/.*"(.+)".*/\1/')" >> "$GITHUB_OUTPUT"
+        run: |
+          version="$(sed -nE 's/^rust-version *= *"([0-9]+(\.[0-9]+){1,2})".*/\1/p' Cargo.toml | head -n1)"
+          if [ -z "$version" ]; then
+            echo "::error::could not parse a valid MSRV (rust-version) from Cargo.toml"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
       # `rust-toolchain.toml` pins `stable`, so we select the MSRV explicitly with
-      # `cargo +<msrv>` (the command-line `+toolchain` override is rustup's highest
-      # precedence and wins over the file).
-      - uses: dtolnay/rust-toolchain@master
+      # `cargo +<msrv>` (the `+toolchain` override wins over the file). The version is
+      # passed via env rather than interpolated into the script.
+      - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ steps.msrv.outputs.version }}
       - uses: Swatinem/rust-cache@v2
-      - run: cargo +${{ steps.msrv.outputs.version }} check --workspace --all-features
+      - name: cargo check on MSRV
+        env:
+          MSRV: ${{ steps.msrv.outputs.version }}
+        run: cargo +"$MSRV" check --workspace --all-features
