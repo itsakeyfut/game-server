@@ -32,10 +32,13 @@ jobs:
           workspaces: fuzz
       # `rust-toolchain.toml` pins `stable`; force nightly for cargo-fuzz's nested
       # builds via the env var (highest-precedence override for all cargo calls).
+      # `--target` is explicit: the prebuilt cargo-fuzz (install-action) is
+      # musl-static and otherwise defaults --target to musl, which lacks std here
+      # and conflicts with the sanitizer's dynamically linked libc.
       - name: Fuzz smoke (codec_parse)
         env:
           RUSTUP_TOOLCHAIN: nightly
-        run: cargo fuzz run codec_parse -- -runs=50000 -max_total_time=30
+        run: cargo fuzz run codec_parse --target x86_64-unknown-linux-gnu -- -runs=50000 -max_total_time=30
       - name: Upload crash inputs
         if: failure()
         uses: actions/upload-artifact@v4
