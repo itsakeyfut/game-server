@@ -1,0 +1,118 @@
+name: Bug Report
+description: Report a bug or unexpected behavior
+title: "[Bug]: "
+labels: ["T-Bug", "S-Needs-Triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a bug! Please provide detailed information to help us understand and fix the issue.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: A concise description of the bug in 1-2 sentences.
+      placeholder: gsf-codec panics on a truncated length prefix instead of returning an error.
+    validations:
+      required: true
+
+  - type: textarea
+    id: current_behavior
+    attributes:
+      label: Current Behavior
+      description: What is currently happening?
+      placeholder: |
+        Decoding a malformed frame with `gsf_codec::decode()` panics
+        (`index out of bounds`) instead of returning `Err(...)`, terminating
+        the connection task with no useful error.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: Expected Behavior
+      description: What should happen instead?
+      placeholder: |
+        `decode()` should return `Err(gsf_codec::Error::...)` so the caller can
+        reject the frame and keep the server running. Malformed input must never panic.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Minimal code or steps to reproduce the bug.
+      placeholder: |
+        ```rust
+        use gsf_codec::decode;
+
+        let bytes = [0xFF, 0xFF, 0x00]; // oversized length prefix
+        let msg = decode::<Ping>(&bytes)?; // panics here
+        ```
+
+        Or run: `cargo test -p gsf-codec -- test_name`
+    validations:
+      required: true
+
+  - type: textarea
+    id: error_output
+    attributes:
+      label: Error Output / Backtrace
+      description: Include any error messages, panics, or backtraces (`RUST_BACKTRACE=1`).
+      placeholder: |
+        thread 'tokio-runtime-worker' panicked at 'index out of bounds', foundation/codec/src/decode.rs:88
+        stack backtrace:
+           0: rust_begin_unwind
+           1: gsf_codec::decode
+           ...
+      render: shell
+
+  - type: input
+    id: crate_version
+    attributes:
+      label: Crate Version
+      description: Which version of the affected `gsf-*` crate are you using?
+      placeholder: "0.0.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Provide your environment information.
+      placeholder: |
+        - OS: Ubuntu 24.04 / macOS 15 / Windows 11
+        - Rust: rustc 1.97.0 (output of `rustc --version`)
+        - Architecture: x86_64 / aarch64
+        - Transport backend (if relevant): TCP / WebSocket / QUIC / custom-UDP
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional Context
+      description: Any other context that might be helpful (a reproducing input, related issues, workarounds).
+      placeholder: |
+        - Only reproducible under injected packet loss / reorder
+        - Workaround: length-check the frame before decoding
+        - Related to issue #123
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      options:
+        - label: I have searched existing issues to ensure this is not a duplicate
+          required: true
+        - label: I have provided a minimal reproduction case
+          required: true
+        - label: I have tested against the latest `main`
+          required: false

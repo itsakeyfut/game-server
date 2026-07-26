@@ -1,0 +1,114 @@
+name: Feature Request
+description: Suggest a new feature or improvement
+title: "[Feature]: "
+labels: ["T-Feat", "S-Needs-Triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a feature! Please provide enough information to help us evaluate and prioritize it.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: A concise description of the feature in 1-2 sentences.
+      placeholder: Add a WebTransport backend to gsf-transport alongside TCP / WebSocket / QUIC.
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: What problem does this solve? Who benefits from it?
+      placeholder: |
+        Browser clients need a low-latency, unreliable-datagram-capable transport that survives
+        head-of-line blocking. Today only TCP/WebSocket are available on the web target.
+
+        Target user: developers shipping a browser-based realtime game on the framework.
+    validations:
+      required: true
+
+  - type: textarea
+    id: detailed_description
+    attributes:
+      label: Detailed Description
+      description: Describe the desired behavior, API shape, and any edge cases to consider.
+      placeholder: |
+        A WebTransport backend behind the existing reliability-channel abstraction:
+        - Implements the same `Transport` trait as the other backends
+        - Exposes both reliable streams and unreliable datagrams
+        - Opt-in behind a `webtransport` feature flag
+
+        ```rust
+        let transport = WebTransport::bind(addr).await?;
+        ```
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: What other approaches have you tried or considered?
+      placeholder: |
+        - Tunnelling datagrams over a WebSocket: works but reintroduces head-of-line blocking
+        - Waiting for the QUIC backend: doesn't cover the browser target
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Links to specs, related issues, or prior art.
+      placeholder: |
+        - Related issue: #45
+        - Prior art: ...
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature to you?
+      options:
+        - Low - Nice to have
+        - Medium - Would improve my workflow
+        - High - Blocking my use case
+      default: 0
+    validations:
+      required: true
+
+  - type: input
+    id: target_component
+    attributes:
+      label: Target Crate / Component
+      description: Which crate or component should this feature live in? (e.g. foundation/transport, game/room, cache/store — or "unsure")
+      placeholder: foundation/transport
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I am willing to help implement this feature
+          required: false
+        - label: I can provide test cases or reproduction scenarios
+          required: false
+        - label: I can help with documentation
+          required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      options:
+        - label: I have searched existing issues to ensure this is not a duplicate
+          required: true
+        - label: I have checked the roadmap to see if this is already planned
+          required: false
+        - label: This feature aligns with the project's goals (a safe, high-quality networked game-server platform)
+          required: false
