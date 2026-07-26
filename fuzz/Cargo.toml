@@ -1,0 +1,26 @@
+# cargo-fuzz project — a SEPARATE, nightly-only workspace, isolated from the
+# stable workspace (the trailing `[workspace]` detaches it so the root's
+# `cargo build`/clippy/test/deny never touch it). Run with `cargo fuzz run <target>`
+# (needs a nightly toolchain + libFuzzer; Linux/macOS only).
+[package]
+name = "gsf-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+# Skeleton target for codec / packet parsing. Wired to real `gsf-codec` decoding
+# in M1; a `gsf-codec` path dependency is added here at that point.
+[[bin]]
+name = "codec_parse"
+path = "fuzz_targets/codec_parse.rs"
+test = false
+doc = false
+bench = false
+
+[workspace]
