@@ -33,6 +33,7 @@ version = "0.0.0"
 edition = "2024"
 # MSRV — rolling N-2 (latest stable minus two). CI reads this value directly.
 rust-version = "1.95"
+license = "MIT OR Apache-2.0"
 
 # External crate versions are centralized here; member crates opt in with
 # `<dep> = { workspace = true }` as they gain real code.
