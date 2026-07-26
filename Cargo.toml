@@ -31,7 +31,8 @@ members = [
 [workspace.package]
 version = "0.0.0"
 edition = "2024"
-rust-version = "1.85"
+# MSRV — rolling N-2 (latest stable minus two). CI reads this value directly.
+rust-version = "1.95"
 
 # External crate versions are centralized here; member crates opt in with
 # `<dep> = { workspace = true }` as they gain real code.
