@@ -10,3 +10,4 @@ bytes = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
+bytes = { workspace = true }
