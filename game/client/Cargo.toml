@@ -1,0 +1,10 @@
+[package]
+name = "gsf-client"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+gsf-transport = { path = "../../foundation/transport" }
+gsf-codec = { path = "../../foundation/codec" }
+gsf-session = { path = "../../foundation/session" }

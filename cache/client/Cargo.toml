@@ -1,0 +1,8 @@
+[package]
+name = "gsf-cache-client"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+gsf-cache-protocol = { path = "../protocol" }

@@ -1,0 +1,8 @@
+[package]
+name = "gsf-codec"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+gsf-macros = { path = "../macros" }

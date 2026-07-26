@@ -1,0 +1,53 @@
+[workspace]
+resolver = "3"
+members = [
+    # foundation/ — generic networked-server toolkit (game-agnostic)
+    "foundation/transport",
+    "foundation/codec",
+    "foundation/macros",
+    "foundation/session",
+    "foundation/middleware",
+    "foundation/actor-runtime",
+    "foundation/security",
+    "foundation/observability",
+    # game/ — Game Server Framework
+    "game/app",
+    "game/room",
+    "game/services",
+    "game/turnbased",
+    "game/realtime",
+    "game/deterministic",
+    "game/mmo",
+    "game/runtime",
+    "game/server",
+    "game/client",
+    # cache/ — Cache Server (shares foundation only)
+    "cache/store",
+    "cache/server",
+    "cache/protocol",
+    "cache/client",
+]
+
+[workspace.package]
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.85"
+
+# External crate versions are centralized here; member crates opt in with
+# `<dep> = { workspace = true }` as they gain real code.
+[workspace.dependencies]
+tokio = { version = "1.53.1", features = ["full"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+serde = { version = "1.0.229", features = ["derive"] }
+postcard = "1.1.3"
+bytes = "1.12.1"
+thiserror = "2.0.19"
+futures = "0.3.33"
+async-trait = "0.1.91"
+# macros toolkit
+proc-macro2 = "1.0.107"
+quote = "1.0.47"
+syn = { version = "3.0.3", features = ["full"] }
+# dev
+proptest = "1.11.0"

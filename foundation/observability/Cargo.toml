@@ -1,0 +1,5 @@
+[package]
+name = "gsf-observability"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true

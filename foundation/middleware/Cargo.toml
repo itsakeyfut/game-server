@@ -1,0 +1,8 @@
+[package]
+name = "gsf-middleware"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+gsf-session = { path = "../session" }
