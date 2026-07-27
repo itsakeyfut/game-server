@@ -6,5 +6,10 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-gsf-actor-runtime = { path = "../../foundation/actor-runtime" }
-gsf-app = { path = "../app" }
+tokio = { workspace = true }
+tracing = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }
+proptest = { workspace = true }
