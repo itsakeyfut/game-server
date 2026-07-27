@@ -25,4 +25,23 @@ pub enum CodecError {
         /// The number of leftover bytes that could not form a complete frame.
         have: usize,
     },
+
+    /// Serializing a message failed. The source is kept codec-agnostic (boxed) so
+    /// `CodecError` does not couple to any one serialization format.
+    #[error("failed to encode message: {0}")]
+    Encode(#[source] Box<dyn std::error::Error + Send + Sync>),
+
+    /// Deserializing a message failed — malformed or truncated bytes. Deserialization
+    /// returns this error rather than panicking, even on adversarial input.
+    #[error("failed to decode message: {0}")]
+    Decode(#[source] Box<dyn std::error::Error + Send + Sync>),
+
+    /// A message decoded successfully but bytes remained afterward. A frame must hold
+    /// exactly one message, so leftover bytes are rejected (they would otherwise let
+    /// two distinct byte strings decode to the same message).
+    #[error("{remaining} trailing bytes after the decoded message")]
+    TrailingBytes {
+        /// The number of unconsumed bytes after the message.
+        remaining: usize,
+    },
 }
