@@ -39,6 +39,10 @@ jobs:
         env:
           RUSTUP_TOOLCHAIN: nightly
         run: cargo fuzz run codec_parse --target x86_64-unknown-linux-gnu -- -runs=50000 -max_total_time=30
+      - name: Fuzz smoke (codec_message)
+        env:
+          RUSTUP_TOOLCHAIN: nightly
+        run: cargo fuzz run codec_message --target x86_64-unknown-linux-gnu -- -runs=50000 -max_total_time=30
       - name: Upload crash inputs
         if: failure()
         uses: actions/upload-artifact@v7

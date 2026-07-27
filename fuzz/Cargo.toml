@@ -14,13 +14,23 @@ cargo-fuzz = true
 [dependencies]
 libfuzzer-sys = "0.4.13"
 bytes = "1.12.1"
+serde = { version = "1.0.229", features = ["derive"] }
 gsf-codec = { path = "../foundation/codec" }
 
-# Codec / packet-parsing target — feeds arbitrary bytes to `gsf-codec` framing and
-# asserts it never panics on malformed / truncated / oversized input.
+# Framing → deserialization pipeline target — frames arbitrary bytes, then decodes each
+# frame with the real codecs. Never panics on malformed / truncated / oversized input.
 [[bin]]
 name = "codec_parse"
 path = "fuzz_targets/codec_parse.rs"
+test = false
+doc = false
+bench = false
+
+# Message-deserializer target — feeds arbitrary bytes straight to `PostcardCodec` /
+# `TaggedCodec` decoders (struct / enum / collection shapes). Never panics.
+[[bin]]
+name = "codec_message"
+path = "fuzz_targets/codec_message.rs"
 test = false
 doc = false
 bench = false
