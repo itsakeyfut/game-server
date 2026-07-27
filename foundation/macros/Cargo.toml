@@ -7,3 +7,14 @@ license.workspace = true
 
 [lib]
 proc-macro = true
+
+[dependencies]
+proc-macro2 = { workspace = true }
+quote = { workspace = true }
+syn = { workspace = true }
+
+[dev-dependencies]
+# The derive's tests use it through `gsf-codec` (which defines the `Packet` trait and
+# re-exports this derive). This dev-only back-edge is a cycle cargo permits.
+gsf-codec = { path = "../codec" }
+serde = { workspace = true }
