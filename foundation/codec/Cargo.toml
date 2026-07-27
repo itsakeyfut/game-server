@@ -6,4 +6,8 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-gsf-macros = { path = "../macros" }
+bytes = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
