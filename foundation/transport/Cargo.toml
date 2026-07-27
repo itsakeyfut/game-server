@@ -10,3 +10,10 @@ bytes = { workspace = true }
 tokio = { workspace = true }
 async-trait = { workspace = true }
 thiserror = { workspace = true }
+futures = { workspace = true }
+tokio-tungstenite = { workspace = true }
+tokio-rustls = { workspace = true }
+rustls = { workspace = true }
+
+[dev-dependencies]
+rcgen = { workspace = true }

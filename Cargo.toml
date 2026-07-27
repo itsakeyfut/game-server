@@ -49,9 +49,14 @@ bytes = "1.12.1"
 thiserror = "2.0.19"
 futures = "0.3.33"
 async-trait = "0.1.91"
+# transport backends (WebSocket / TLS) — ring provider (no aws-lc-rs; Windows-safe)
+tokio-tungstenite = { version = "0.30.0", default-features = false, features = ["handshake"] }
+tokio-rustls = { version = "0.26.4", default-features = false, features = ["ring", "logging", "tls12"] }
+rustls = { version = "0.23.42", default-features = false, features = ["ring", "logging", "std", "tls12"] }
 # macros toolkit
 proc-macro2 = "1.0.107"
 quote = "1.0.47"
 syn = { version = "3.0.3", features = ["full"] }
 # dev
 proptest = "1.11.0"
+rcgen = "0.14.8"
