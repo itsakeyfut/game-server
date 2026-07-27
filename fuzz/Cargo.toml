@@ -12,10 +12,12 @@ edition = "2021"
 cargo-fuzz = true
 
 [dependencies]
-libfuzzer-sys = "0.4"
+libfuzzer-sys = "0.4.13"
+bytes = "1.12.1"
+gsf-codec = { path = "../foundation/codec" }
 
-# Skeleton target for codec / packet parsing. Wired to real `gsf-codec` decoding
-# in M1; a `gsf-codec` path dependency is added here at that point.
+# Codec / packet-parsing target — feeds arbitrary bytes to `gsf-codec` framing and
+# asserts it never panics on malformed / truncated / oversized input.
 [[bin]]
 name = "codec_parse"
 path = "fuzz_targets/codec_parse.rs"
