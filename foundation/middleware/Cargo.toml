@@ -7,3 +7,9 @@ license.workspace = true
 
 [dependencies]
 gsf-session = { path = "../session" }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+bytes = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }
