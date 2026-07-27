@@ -8,3 +8,7 @@ license.workspace = true
 [dependencies]
 gsf-transport = { path = "../transport" }
 gsf-codec = { path = "../codec" }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
