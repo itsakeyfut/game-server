@@ -9,3 +9,10 @@ license.workspace = true
 gsf-session = { path = "../../foundation/session" }
 gsf-middleware = { path = "../../foundation/middleware" }
 gsf-actor-runtime = { path = "../../foundation/actor-runtime" }
+gsf-lifecycle = { path = "../../foundation/lifecycle" }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+tokio = { workspace = true }
