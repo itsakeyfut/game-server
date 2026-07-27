@@ -93,30 +93,73 @@ impl FromIterator<ChannelKind> for ChannelCapabilities {
     }
 }
 
-/// A bidirectional byte channel with a fixed [`ChannelKind`].
+/// What [`Channel::send`] does when the bounded send queue is full.
+///
+/// Chosen per channel — reliable channels flow-control by waiting, unreliable
+/// channels never block and drop instead (see [`default_for`](Self::default_for)).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BackpressurePolicy {
+    /// Wait for capacity — the sender is flow-controlled (reliable channels).
+    Block,
+    /// Never wait; if the queue is full, drop the message being sent (unreliable
+    /// channels, best-effort). Strict latest-priority (dropping the *oldest*
+    /// instead) is deferred to the reliable-UDP milestone.
+    DropNewest,
+    /// Never wait; if the queue is full, fail with [`TransportError::Backpressure`]
+    /// so the caller can tear the connection down.
+    Disconnect,
+}
+
+impl BackpressurePolicy {
+    /// The default policy for a channel of `kind`: reliable kinds [`Block`](Self::Block),
+    /// unreliable kinds [`DropNewest`](Self::DropNewest).
+    #[must_use]
+    pub const fn default_for(kind: ChannelKind) -> Self {
+        match kind {
+            ChannelKind::ReliableOrdered | ChannelKind::ReliableUnordered => Self::Block,
+            ChannelKind::UnreliableSequenced | ChannelKind::Unreliable => Self::DropNewest,
+        }
+    }
+}
+
+/// A bidirectional byte channel with a fixed [`ChannelKind`] and [`BackpressurePolicy`].
 ///
 /// This is the per-message hot path, so it is a concrete type — no trait object,
 /// no dynamic dispatch on send/recv. It is backed by a pair of bounded mpsc queues
-/// (one per direction); the bound is the backpressure seam a later issue tunes.
-/// Every kind currently applies backpressure ([`send`](Self::send) awaits when the
-/// queue is full); per-kind drop policies for the unreliable kinds are deferred to
-/// that same backpressure issue.
+/// (one per direction); when the send queue is full, [`send`](Self::send) applies the
+/// channel's [`policy`](Self::policy) — waiting (reliable) or dropping (unreliable).
 pub struct Channel {
     kind: ChannelKind,
+    policy: BackpressurePolicy,
     tx: mpsc::Sender<Bytes>,
     rx: mpsc::Receiver<Bytes>,
 }
 
 impl Channel {
-    /// Build a channel from a matched sender/receiver pair. Backends (the loopback
-    /// pair, or a socket bridge) construct the mpsc halves and wire them however
-    /// they move bytes.
+    /// Build a channel from a matched sender/receiver pair, taking the
+    /// [`BackpressurePolicy::default_for`] the `kind`. Backends (the loopback pair, or
+    /// a socket bridge) construct the mpsc halves and wire them however they move bytes.
     pub(crate) fn new(
         kind: ChannelKind,
         tx: mpsc::Sender<Bytes>,
         rx: mpsc::Receiver<Bytes>,
     ) -> Channel {
-        Channel { kind, tx, rx }
+        Channel::with_policy(kind, tx, rx, BackpressurePolicy::default_for(kind))
+    }
+
+    /// Build a channel with an explicit [`BackpressurePolicy`].
+    pub(crate) fn with_policy(
+        kind: ChannelKind,
+        tx: mpsc::Sender<Bytes>,
+        rx: mpsc::Receiver<Bytes>,
+        policy: BackpressurePolicy,
+    ) -> Channel {
+        Channel {
+            kind,
+            policy,
+            tx,
+            rx,
+        }
     }
 
     /// Create a connected, full-duplex pair of channels of the same `kind`.
@@ -137,15 +180,39 @@ impl Channel {
         self.kind
     }
 
-    /// Send `payload` to the peer, waiting if the send queue is full (backpressure).
+    /// The policy [`send`](Self::send) applies when the send queue is full.
+    #[must_use]
+    pub fn policy(&self) -> BackpressurePolicy {
+        self.policy
+    }
+
+    /// Send `payload` to the peer, applying the channel's [`BackpressurePolicy`] when
+    /// the send queue is full: [`Block`](BackpressurePolicy::Block) waits,
+    /// [`DropNewest`](BackpressurePolicy::DropNewest) drops (returning `Ok`), and
+    /// [`Disconnect`](BackpressurePolicy::Disconnect) fails.
     ///
     /// # Errors
-    /// [`TransportError::ConnectionClosed`] if the peer's receive half has been dropped.
+    /// [`TransportError::ConnectionClosed`] if the peer's receive half has been dropped;
+    /// [`TransportError::Backpressure`] if the queue is full under the
+    /// [`Disconnect`](BackpressurePolicy::Disconnect) policy.
     pub async fn send(&self, payload: Bytes) -> Result<(), TransportError> {
-        self.tx
-            .send(payload)
-            .await
-            .map_err(|_| TransportError::ConnectionClosed)
+        match self.policy {
+            BackpressurePolicy::Block => self
+                .tx
+                .send(payload)
+                .await
+                .map_err(|_| TransportError::ConnectionClosed),
+            BackpressurePolicy::DropNewest => match self.tx.try_send(payload) {
+                Ok(()) => Ok(()),
+                Err(mpsc::error::TrySendError::Full(_)) => Ok(()), // best-effort: dropped
+                Err(mpsc::error::TrySendError::Closed(_)) => Err(TransportError::ConnectionClosed),
+            },
+            BackpressurePolicy::Disconnect => match self.tx.try_send(payload) {
+                Ok(()) => Ok(()),
+                Err(mpsc::error::TrySendError::Full(_)) => Err(TransportError::Backpressure),
+                Err(mpsc::error::TrySendError::Closed(_)) => Err(TransportError::ConnectionClosed),
+            },
+        }
     }
 
     /// Receive the next bytes from the peer.
@@ -230,5 +297,109 @@ mod tests {
         let (a, mut b) = Channel::pair(ChannelKind::ReliableOrdered, 8);
         drop(a);
         assert_eq!(b.recv().await, None);
+    }
+
+    /// A connected pair with an explicit policy on both ends (for policy tests).
+    fn pair_with_policy(
+        kind: ChannelKind,
+        capacity: usize,
+        policy: BackpressurePolicy,
+    ) -> (Channel, Channel) {
+        let (a_tx, b_rx) = mpsc::channel(capacity);
+        let (b_tx, a_rx) = mpsc::channel(capacity);
+        (
+            Channel::with_policy(kind, a_tx, a_rx, policy),
+            Channel::with_policy(kind, b_tx, b_rx, policy),
+        )
+    }
+
+    #[test]
+    fn default_policy_should_match_channel_kind() {
+        use BackpressurePolicy::{Block, DropNewest};
+        assert_eq!(
+            BackpressurePolicy::default_for(ChannelKind::ReliableOrdered),
+            Block
+        );
+        assert_eq!(
+            BackpressurePolicy::default_for(ChannelKind::ReliableUnordered),
+            Block
+        );
+        assert_eq!(
+            BackpressurePolicy::default_for(ChannelKind::UnreliableSequenced),
+            DropNewest
+        );
+        assert_eq!(
+            BackpressurePolicy::default_for(ChannelKind::Unreliable),
+            DropNewest
+        );
+        // A reliable channel reports its derived policy.
+        let (a, _b) = Channel::pair(ChannelKind::ReliableOrdered, 1);
+        assert_eq!(a.policy(), Block);
+    }
+
+    #[tokio::test]
+    async fn reliable_channel_send_should_block_when_full() {
+        use std::time::Duration;
+        use tokio::time::timeout;
+
+        // Capacity 1: the second send has to wait for the receiver.
+        let (a, mut b) = Channel::pair(ChannelKind::ReliableOrdered, 1);
+        a.send(Bytes::from_static(b"1")).await.unwrap();
+
+        // The queue is full, so this send blocks (times out).
+        let blocked = timeout(Duration::from_millis(100), a.send(Bytes::from_static(b"2"))).await;
+        assert!(
+            blocked.is_err(),
+            "reliable send must block when the queue is full"
+        );
+
+        // Draining a message frees capacity so a send can proceed.
+        assert_eq!(b.recv().await, Some(Bytes::from_static(b"1")));
+        a.send(Bytes::from_static(b"3")).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn unreliable_channel_send_should_drop_when_full_without_blocking() {
+        use std::time::Duration;
+        use tokio::time::timeout;
+
+        let (a, mut b) = Channel::pair(ChannelKind::Unreliable, 2);
+        assert_eq!(a.policy(), BackpressurePolicy::DropNewest);
+
+        // Far more sends than capacity, with nobody receiving: none may block.
+        for i in 0..10u8 {
+            let send = timeout(Duration::from_millis(100), a.send(Bytes::from(vec![i])));
+            send.await
+                .expect("unreliable send must never block")
+                .unwrap();
+        }
+
+        // The queue held at most `capacity`, keeping the earliest (drop-newest).
+        let mut got = Vec::new();
+        while let Ok(Some(bytes)) = timeout(Duration::from_millis(50), b.recv()).await {
+            got.push(bytes[0]);
+        }
+        assert!(
+            got.len() <= 2,
+            "unreliable channel must drop down to capacity"
+        );
+        assert_eq!(
+            got.first(),
+            Some(&0),
+            "drop-newest keeps the oldest messages"
+        );
+    }
+
+    #[tokio::test]
+    async fn disconnect_policy_send_should_error_when_full() {
+        let (a, _b) = pair_with_policy(
+            ChannelKind::ReliableOrdered,
+            1,
+            BackpressurePolicy::Disconnect,
+        );
+        a.send(Bytes::from_static(b"1")).await.unwrap(); // fills the single slot
+
+        let err = a.send(Bytes::from_static(b"2")).await.unwrap_err();
+        assert!(matches!(err, TransportError::Backpressure));
     }
 }
