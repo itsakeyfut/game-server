@@ -51,7 +51,7 @@ mod memory;
 pub mod tcp;
 pub mod ws;
 
-pub use channel::{Channel, ChannelCapabilities, ChannelKind};
+pub use channel::{BackpressurePolicy, Channel, ChannelCapabilities, ChannelKind};
 pub use connection::{Connection, Listener};
 pub use error::TransportError;
 pub use memory::{MemoryConnection, MemoryConnector, MemoryListener, memory_transport};

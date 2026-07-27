@@ -32,4 +32,9 @@ pub enum TransportError {
     /// TLS handshake, or a malformed control frame).
     #[error("transport protocol error: {0}")]
     Protocol(String),
+
+    /// The send queue is full and the channel's policy is to signal overflow rather
+    /// than block or drop (see `BackpressurePolicy::Disconnect`).
+    #[error("send queue full (backpressure)")]
+    Backpressure,
 }
