@@ -51,6 +51,8 @@ bytes = "1.12.1"
 thiserror = "2.0.19"
 futures = "0.3.33"
 async-trait = "0.1.91"
+# CSPRNG for unforgeable resume tokens
+rand = "0.10.2"
 # transport backends (WebSocket / TLS) — ring provider (no aws-lc-rs; Windows-safe)
 tokio-tungstenite = { version = "0.30.0", default-features = false, features = ["handshake"] }
 tokio-rustls = { version = "0.26.4", default-features = false, features = ["ring", "logging", "tls12"] }
