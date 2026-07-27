@@ -108,23 +108,27 @@ pub struct Channel {
 }
 
 impl Channel {
+    /// Build a channel from a matched sender/receiver pair. Backends (the loopback
+    /// pair, or a socket bridge) construct the mpsc halves and wire them however
+    /// they move bytes.
+    pub(crate) fn new(
+        kind: ChannelKind,
+        tx: mpsc::Sender<Bytes>,
+        rx: mpsc::Receiver<Bytes>,
+    ) -> Channel {
+        Channel { kind, tx, rx }
+    }
+
     /// Create a connected, full-duplex pair of channels of the same `kind`.
     ///
     /// `capacity` bounds each direction's in-flight queue (the backpressure point).
     pub(crate) fn pair(kind: ChannelKind, capacity: usize) -> (Channel, Channel) {
         let (a_tx, b_rx) = mpsc::channel(capacity);
         let (b_tx, a_rx) = mpsc::channel(capacity);
-        let a = Channel {
-            kind,
-            tx: a_tx,
-            rx: a_rx,
-        };
-        let b = Channel {
-            kind,
-            tx: b_tx,
-            rx: b_rx,
-        };
-        (a, b)
+        (
+            Channel::new(kind, a_tx, a_rx),
+            Channel::new(kind, b_tx, b_rx),
+        )
     }
 
     /// The reliability semantics this channel provides.
@@ -144,10 +148,13 @@ impl Channel {
             .map_err(|_| TransportError::ConnectionClosed)
     }
 
-    /// Receive the next message from the peer.
+    /// Receive the next bytes from the peer.
     ///
     /// Returns `None` once the peer's send half is dropped and the queue is drained —
-    /// i.e. the channel is closed.
+    /// i.e. the channel is closed. For a socket-backed reliable-ordered channel the
+    /// bytes are delivered in order and in full, but a single `recv` is *not*
+    /// guaranteed to line up with a single peer `send` (message boundaries are the
+    /// codec's concern); the in-memory loopback happens to preserve them 1:1.
     pub async fn recv(&mut self) -> Option<Bytes> {
         self.rx.recv().await
     }

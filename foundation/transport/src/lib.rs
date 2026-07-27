@@ -10,8 +10,13 @@
 //!   a transport supports.
 //! - [`Connection`] / [`Listener`] — the cold-path (setup / teardown) trait surface.
 //! - [`Channel`] — the concrete, per-message hot path (no dynamic dispatch).
-//! - [`memory_transport`] — an in-memory loopback reference implementation for tests;
-//!   real byte-transports (TCP, WebSocket, …) arrive in later issues.
+//! - [`memory_transport`] — an in-memory loopback reference implementation for tests.
+//! - [`tcp`] — the TCP byte-transport (one reliable-ordered channel per connection);
+//!   further backends (WebSocket, …) arrive in later issues.
+//!
+//! Convention: the in-memory reference transport is exposed at the crate root as the
+//! default, while each concrete wire backend lives in its own module ([`tcp`], and
+//! future `ws` / `quic`).
 //!
 //! ```
 //! use bytes::Bytes;
@@ -42,6 +47,7 @@ mod channel;
 mod connection;
 mod error;
 mod memory;
+pub mod tcp;
 
 pub use channel::{Channel, ChannelCapabilities, ChannelKind};
 pub use connection::{Connection, Listener};
