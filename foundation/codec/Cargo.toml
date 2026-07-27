@@ -10,6 +10,8 @@ bytes = { workspace = true }
 thiserror = { workspace = true }
 serde = { workspace = true }
 postcard = { workspace = true, features = ["use-std"] }
+gsf-transport = { path = "../transport" }
+gsf-macros = { path = "../macros" }
 
 [dev-dependencies]
 proptest = { workspace = true }
