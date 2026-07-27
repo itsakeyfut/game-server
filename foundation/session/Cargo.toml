@@ -9,6 +9,8 @@ license.workspace = true
 gsf-transport = { path = "../transport" }
 gsf-codec = { path = "../codec" }
 thiserror = { workspace = true }
+async-trait = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
+tokio = { workspace = true }
