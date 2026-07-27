@@ -11,12 +11,13 @@
 //! - [`Connection`] / [`Listener`] — the cold-path (setup / teardown) trait surface.
 //! - [`Channel`] — the concrete, per-message hot path (no dynamic dispatch).
 //! - [`memory_transport`] — an in-memory loopback reference implementation for tests.
-//! - [`tcp`] — the TCP byte-transport (one reliable-ordered channel per connection);
-//!   further backends (WebSocket, …) arrive in later issues.
+//! - [`tcp`] — the TCP byte-transport (one reliable-ordered channel per connection).
+//! - [`ws`] — the WebSocket byte-transport (`ws://` and TLS `wss://`); further
+//!   backends (QUIC, …) arrive in later issues.
 //!
 //! Convention: the in-memory reference transport is exposed at the crate root as the
-//! default, while each concrete wire backend lives in its own module ([`tcp`], and
-//! future `ws` / `quic`).
+//! default, while each concrete wire backend lives in its own module ([`tcp`], [`ws`],
+//! and future `quic`).
 //!
 //! ```
 //! use bytes::Bytes;
@@ -48,8 +49,13 @@ mod connection;
 mod error;
 mod memory;
 pub mod tcp;
+pub mod ws;
 
 pub use channel::{Channel, ChannelCapabilities, ChannelKind};
 pub use connection::{Connection, Listener};
 pub use error::TransportError;
 pub use memory::{MemoryConnection, MemoryConnector, MemoryListener, memory_transport};
+
+/// Re-export so callers build the TLS configs used by [`ws`] backends against the
+/// exact rustls version this crate depends on.
+pub use rustls;

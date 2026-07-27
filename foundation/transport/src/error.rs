@@ -27,4 +27,9 @@ pub enum TransportError {
     /// An underlying I/O error from a byte-transport backend.
     #[error(transparent)]
     Io(#[from] std::io::Error),
+
+    /// A protocol- or handshake-level failure from a backend (e.g. the WebSocket or
+    /// TLS handshake, or a malformed control frame).
+    #[error("transport protocol error: {0}")]
+    Protocol(String),
 }
