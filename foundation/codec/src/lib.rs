@@ -9,8 +9,8 @@
 //!   metadata (id / channel / visibility).
 //! - [`Registry`] — a type-safe map from a packet id to its type that detects id
 //!   collisions at startup.
-//!
-//! The tagged public format arrives in a later issue.
+//! - [`TaggedCodec`] — the public-protocol [`Codec`]: a tagged, self-describing (CBOR)
+//!   format so client-facing packets evolve their fields backward-compatibly.
 #![forbid(unsafe_code)]
 
 mod error;
@@ -18,12 +18,14 @@ mod frame;
 mod packet;
 mod registry;
 mod serialize;
+mod tagged;
 
 pub use error::CodecError;
 pub use frame::{DEFAULT_MAX_FRAME_LEN, LENGTH_PREFIX_BYTES, LengthDelimited};
 pub use packet::{Packet, PacketId, Visibility};
 pub use registry::{RegisteredPacket, Registry, RegistryError};
 pub use serialize::{Codec, PostcardCodec};
+pub use tagged::TaggedCodec;
 
 /// Re-exported from `gsf-transport` so a packet's channel is named from one crate.
 pub use gsf_transport::ChannelKind;

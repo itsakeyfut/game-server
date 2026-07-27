@@ -10,6 +10,7 @@ bytes = { workspace = true }
 thiserror = { workspace = true }
 serde = { workspace = true }
 postcard = { workspace = true, features = ["use-std"] }
+ciborium = { workspace = true }
 gsf-transport = { path = "../transport" }
 gsf-macros = { path = "../macros" }
 
