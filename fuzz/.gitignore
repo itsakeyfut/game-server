@@ -3,3 +3,5 @@ target/
 corpus/
 artifacts/
 coverage/
+# generated lockfile — not tracked (matches the workspace's Cargo.lock convention)
+Cargo.lock
