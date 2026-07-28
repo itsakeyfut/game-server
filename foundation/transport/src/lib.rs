@@ -11,9 +11,14 @@
 //! - [`Connection`] / [`Listener`] — the cold-path (setup / teardown) trait surface.
 //! - [`Channel`] — the concrete, per-message hot path (no dynamic dispatch).
 //! - [`memory_transport`] — an in-memory loopback reference implementation for tests.
-//! - [`tcp`] — the TCP byte-transport (one reliable-ordered channel per connection).
-//! - [`ws`] — the WebSocket byte-transport (`ws://` and TLS `wss://`); further
-//!   backends (QUIC, …) arrive in later issues.
+//! - [`tcp`] — the TCP byte-transport (one reliable-ordered channel per connection),
+//!   TLS-encrypted by default (`bind` / `connect`); plaintext is an explicit opt-out.
+//! - [`ws`] — the WebSocket byte-transport, `wss://` (TLS) by default (`bind` / `connect`)
+//!   with a plaintext `ws://` opt-out; further backends (QUIC, …) arrive in later issues.
+//!
+//! **Encrypted by default** (security §1.1): each socket backend's `bind` / `connect` take
+//! a rustls config and encrypt; the loud `bind_plaintext` / `connect_plaintext` are the
+//! only way to run unencrypted.
 //!
 //! Convention: the in-memory reference transport is exposed at the crate root as the
 //! default, while each concrete wire backend lives in its own module ([`tcp`], [`ws`],
@@ -49,6 +54,7 @@ mod connection;
 mod error;
 mod memory;
 pub mod tcp;
+mod tls;
 pub mod ws;
 
 pub use channel::{BackpressurePolicy, Channel, ChannelCapabilities, ChannelKind};
