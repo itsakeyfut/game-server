@@ -9,12 +9,19 @@
 //! [`broadcast`](RoomCtx::broadcast) / [`send_to`](RoomCtx::send_to)), which the actor
 //! turns into [`Outbound`] messages.
 //!
-//! This is the minimal Room: the `App::add_room` router integration, the event bus, tick,
-//! and reconnect hooks arrive in later issues.
+//! Framework lifecycle events (a player joining/leaving, a room opening/closing) flow
+//! through the [`EventBus`] (runtime §4): any number of consumers — the game, service
+//! layers, the observability layer — [`subscribe`](EventBus::subscribe) and receive each
+//! [`RoomEvent`].
+//!
+//! This is the minimal Room: the `App::add_room` router integration, wiring producers to
+//! the event bus, tick, and reconnect hooks arrive in later issues.
 #![forbid(unsafe_code)]
 
+mod event;
 mod room;
 
+pub use event::{EventBus, EventStreamError, EventSubscriber, RoomEvent};
 pub use room::{
     HandlerFuture, Outbound, PlayerId, RequestId, RoomBuilder, RoomClosed, RoomCtx, RoomHandle,
 };
