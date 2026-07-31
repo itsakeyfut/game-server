@@ -10,13 +10,20 @@
 //!   be a memory DoS). Use `KeyedRateLimiter<IpAddr>` for a **per-IP connection rate**.
 //! - [`ConnectionLimiter`] — a cap on **un-established connections** (connection-flood).
 //!
+//! Per-connection resource caps (security §1.3) reuse those primitives, one per dimension:
+//! - **memory** — a [`ResourceQuota`] reserving message *bytes*.
+//! - **in-flight message count** — a [`ResourceQuota`] reserving `1` per message.
+//! - **bandwidth** — a byte-rate [`TokenBucket`] via [`try_acquire_n`](TokenBucket::try_acquire_n)
+//!   (`RateLimit::per_second(bytes_per_sec, burst_bytes)`, charging the message length).
+//!
 //! Wiring these into the transport accept loop / middleware pipeline / session is a later
-//! integration step. Encryption / source validation / per-connection resource caps arrive in
-//! their own issues.
+//! integration step. Encryption / source validation arrive in their own issues.
 #![forbid(unsafe_code)]
 
 mod connection;
+mod quota;
 mod rate_limit;
 
 pub use connection::ConnectionLimiter;
+pub use quota::ResourceQuota;
 pub use rate_limit::{KeyedRateLimiter, RateLimit, TokenBucket};
