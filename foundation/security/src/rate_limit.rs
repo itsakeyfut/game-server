@@ -80,13 +80,26 @@ impl TokenBucket {
     }
 
     /// Try to consume one token at `now`. Returns `true` if a token was available (allow), or
-    /// `false` if the bucket is empty (throttle).
+    /// `false` if the bucket is empty (throttle). Equivalent to `try_acquire_n(now, 1)`.
     #[must_use = "the throttle decision must be enforced, not discarded"]
     pub fn try_acquire(&mut self, now: Instant) -> bool {
+        self.try_acquire_n(now, 1)
+    }
+
+    /// Try to consume `tokens` at `now`, e.g. `tokens = message length in bytes` for a
+    /// byte-rate / **bandwidth** limit (`RateLimit::per_second(bytes_per_sec, burst_bytes)`).
+    /// Returns `true` if enough budget was available.
+    ///
+    /// A charge whose cost exceeds the bucket capacity (`tokens > burst` for a per-byte limit)
+    /// can *never* be admitted — size `burst` at least as large as the biggest single charge
+    /// (e.g. the max message size). `tokens == 0` is always allowed (free).
+    #[must_use = "the throttle decision must be enforced, not discarded"]
+    pub fn try_acquire_n(&mut self, now: Instant, tokens: u64) -> bool {
         self.budget_nanos = self.budget_at(now);
         self.last = now;
-        if self.budget_nanos >= self.interval_nanos {
-            self.budget_nanos -= self.interval_nanos;
+        let need = self.interval_nanos.saturating_mul(tokens);
+        if self.budget_nanos >= need {
+            self.budget_nanos -= need;
             true
         } else {
             false
@@ -232,6 +245,45 @@ mod tests {
         assert!(bucket.try_acquire(t0));
         assert!(bucket.try_acquire(t0));
         assert!(!bucket.try_acquire(t0));
+    }
+
+    #[test]
+    fn token_bucket_try_acquire_n_should_charge_by_amount() {
+        // A byte-rate / bandwidth bucket: 1000 bytes/sec, burst 1000 bytes.
+        let t0 = base();
+        let mut bucket = RateLimit::per_second(1000, 1000).bucket(t0);
+        assert!(bucket.try_acquire_n(t0, 600));
+        assert!(bucket.try_acquire_n(t0, 400)); // 600 + 400 == burst
+        assert!(!bucket.try_acquire_n(t0, 1)); // drained
+    }
+
+    #[test]
+    fn token_bucket_try_acquire_n_should_deny_a_charge_over_capacity() {
+        // Boundary: exactly `burst` fits, `burst + 1` does not — and a single charge larger
+        // than the burst can never be admitted even on a full bucket.
+        let t0 = base();
+        let mut bucket = RateLimit::per_second(1000, 1000).bucket(t0);
+        assert!(!bucket.try_acquire_n(t0, 1001)); // over capacity → denied
+        assert!(bucket.try_acquire_n(t0, 1000)); // exactly capacity → allowed
+    }
+
+    #[test]
+    fn token_bucket_try_acquire_n_zero_should_be_free() {
+        let t0 = base();
+        let mut bucket = RateLimit::per_second(1000, 1000).bucket(t0);
+        assert!(bucket.try_acquire_n(t0, 1000)); // drain
+        assert!(bucket.try_acquire_n(t0, 0)); // a zero-cost charge is always allowed
+        assert!(!bucket.try_acquire_n(t0, 1));
+    }
+
+    #[test]
+    fn token_bucket_try_acquire_n_should_refill_over_time() {
+        let t0 = base();
+        let mut bucket = RateLimit::per_second(1000, 1000).bucket(t0);
+        assert!(bucket.try_acquire_n(t0, 1000)); // drain
+        assert!(!bucket.try_acquire_n(t0, 500));
+        // Half a second later ~500 bytes have refilled.
+        assert!(bucket.try_acquire_n(t0 + Duration::from_millis(500), 500));
     }
 
     #[test]
